@@ -1,0 +1,83 @@
+/* Import academic-appropriate Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono&display=swap');
+
+/* Color variables */
+:root {
+  --primary: #1565C0;
+  --secondary: #0D47A1;
+  --accent-truth: #2196F3;
+  --accent-indeterminacy: #FF9800;
+  --accent-falsehood: #F44336;
+  --bg-main: #F8F9FC;
+  --bg-card: #FFFFFF;
+  --text-primary: #1A1A2E;
+  --text-secondary: #546E7A;
+  --border: #E0E4EC;
+  --shadow: 0 2px 12px rgba(21, 101, 192, 0.08);
+}
+
+/* Typography */
+body, .stApp { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg-main); }
+h1, h2, h3 { font-family: 'Crimson Pro', serif; color: var(--primary); }
+code, .stCode { font-family: 'IBM Plex Mono', monospace; }
+
+/* Cards for metrics and results */
+.metric-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  border-top: 4px solid var(--primary);
+}
+
+/* Decision badges */
+.decision-reject { background: #FFEBEE; color: #C62828; border: 1px solid #EF9A9A; padding: 4px 12px; border-radius: 20px; font-weight: 600; }
+.decision-indeterminate { background: #FFF3E0; color: #E65100; border: 1px solid #FFCC80; padding: 4px 12px; border-radius: 20px; font-weight: 600; }
+.decision-fail { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; padding: 4px 12px; border-radius: 20px; font-weight: 600; }
+
+/* Neutrosophic number display */
+.neutro-number {
+  font-family: 'IBM Plex Mono', monospace;
+  background: linear-gradient(135deg, #E3F2FD, #FFF3E0);
+  border-left: 4px solid var(--accent-truth);
+  padding: 0.8rem 1rem;
+  border-radius: 0 8px 8px 0;
+  font-size: 1.1em;
+}
+
+/* Sidebar branding */
+.sidebar-brand {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  padding: 1.5rem;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+/* Progress indicators */
+.indeterminate-cell { background-color: #FFF8E1 !important; }
+.missing-cell { background-color: #FCE4EC !important; }
+.determinate-cell { background-color: #E8F5E9 !important; }
+
+/* Hero section */
+.hero-section {
+  background: linear-gradient(135deg, #1565C0 0%, #0D47A1 50%, #1A237E 100%);
+  color: white;
+  padding: 3rem 2rem;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+}
+
+/* Equation display boxes */
+.equation-box {
+  background: #F5F5F5;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  font-family: 'Crimson Pro', serif;
+  font-size: 1.1em;
+  margin: 1rem 0;
+}
