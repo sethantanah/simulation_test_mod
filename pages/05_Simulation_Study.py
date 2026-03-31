@@ -28,14 +28,14 @@ with col_config:
     distributions = st.multiselect("Distributions", ["normal", "skewed", "heavy_tailed", "uniform", "bimodal"], default=["normal", "skewed"])
     effect_sizes = st.multiselect("Effect Sizes (Cohen's d max)", [0.0, 0.2, 0.5, 0.8], default=[0.0, 0.5])
     
-    n_sims = st.session_state.n_sims
+    n_sims = st.session_state.get('n_sims', 1000)
     st.info(f"Using {n_sims} simulations per condition (from Global Settings).")
     
     run_sim = st.button("Run Simulation", type="primary", use_container_width=True, disabled=not (sample_sizes and indet_levels and distributions and effect_sizes))
 
 with col_results:
     if run_sim:
-        sim_engine = MonteCarloSimulation(n_simulations=n_sims, random_seed=st.session_state.random_seed)
+        sim_engine = MonteCarloSimulation(n_simulations=n_sims, random_seed=st.session_state.get('random_seed', 42))
         
         progress_bar = st.progress(0)
         status_text = st.empty()
@@ -46,7 +46,7 @@ with col_results:
             status_text.text(f"Running simulation: iteration {current} of {total}...")
             
         with st.spinner("Executing Monte Carlo loops..."):
-            res_df = sim_engine.run(test_type, sample_sizes, indet_levels, distributions, effect_sizes, alpha=st.session_state.alpha, progress_callback=cb_progress)
+            res_df = sim_engine.run(test_type, sample_sizes, indet_levels, distributions, effect_sizes, alpha=st.session_state.get('alpha', 0.05), progress_callback=cb_progress)
             
         st.success("Simulation Complete!")
         st.session_state[f'sim_results_{test_type}'] = res_df

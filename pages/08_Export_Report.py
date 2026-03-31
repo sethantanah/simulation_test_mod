@@ -39,6 +39,11 @@ with col_prev:
     st.markdown("### Generation Status")
     
     if generate_btn:
+        sim_data = {}
+        for k in ['kruskal_wallis', 'mann_whitney', 'moods_median']:
+            if f'sim_results_{k}' in st.session_state:
+                sim_data[k] = st.session_state[f'sim_results_{k}']
+                
         config = {
             'title': title, 'author': author,
             'sections': {
@@ -46,7 +51,8 @@ with col_prev:
                 'Mathematical Framework': s3, 'Proposed Modifications': s4,
                 'Simulation Study Results': s5, 'Real-Life Data Applications': s6,
                 'Comparative Analysis': s7, 'Conclusions & Recommendations': s8
-            }
+            },
+            'sim_data': sim_data
         }
         
         output_filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "NeutroStat_Research_Report.pdf")

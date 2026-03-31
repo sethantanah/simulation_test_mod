@@ -23,8 +23,8 @@ st.markdown("Run the unmodified neutrosophic non-parametric tests as proposed in
 tab_kw, tab_mwu, tab_mm = st.tabs(["Kruskal-Wallis", "Mann-Whitney U", "Mood's Median"])
 
 # Global config
-alpha = st.session_state.alpha
-indet_thresh = st.session_state.indet_threshold
+alpha = st.session_state.get('alpha', 0.05)
+indet_thresh = st.session_state.get('indet_threshold', 0.10)
 
 def render_test_ui(test_type):
     col_in, col_out = st.columns([4, 6])
