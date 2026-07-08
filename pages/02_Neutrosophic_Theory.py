@@ -28,7 +28,7 @@ with col1:
 
 with col2:
     st.markdown("#### Properties")
-    st.markdown(f"**Number Output:** `<span class='neutro-number'>{N}</span>`", unsafe_allow_html=True)
+    st.markdown(f"**Number Output:** `{N}`", unsafe_allow_html=True)
     
     st.metric("Score Function (T_mean - F_mean)", f"{N.score():.3f}")
     st.metric("Accuracy (T_mean + F_mean)", f"{N.accuracy():.3f}")
