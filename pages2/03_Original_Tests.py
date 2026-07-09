@@ -16,7 +16,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from app import load_css
+from app4 import load_css
 from core.neutrosophic import neutrosophicate, NeutrosophicArray, NeutrosophicNumber
 from core.tests.kruskal_wallis import kruskal_wallis_original
 from core.tests.mann_whitney import mann_whitney_original

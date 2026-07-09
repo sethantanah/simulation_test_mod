@@ -18,7 +18,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from app import load_css
+from app4 import load_css
 from visualization.plots import plot_radar_comparison
 
 st.set_page_config(

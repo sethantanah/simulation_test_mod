@@ -15,7 +15,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from app import load_css
+from app4 import load_css
 from core.simulation import MonteCarloSimulation
 from visualization.plots import (
     plot_power_curves, plot_type1_heatmap, plot_relative_efficiency,

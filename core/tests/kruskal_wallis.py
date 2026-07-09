@@ -16,6 +16,8 @@ from core.neutrosophic import (
 # =============================================================================
 
 __all__ = [
+    "kruskal_wallis_original",
+    "kruskal_wallis_modified",
     "kruskal_wallis_neutrosophic_interval",
     "kruskal_wallis_sensitivity",
     "kruskal_wallis_robust",
@@ -27,6 +29,16 @@ __all__ = [
 ]
 
 _EPSILON = 1e-10
+
+
+def kruskal_wallis_original(groups: list, alpha: float = 0.05) -> dict:
+    """Backward-compatible wrapper for the classical-style Kruskal-Wallis entry point."""
+    return kruskal_wallis_neutrosophic(groups, method="classical", alpha=alpha)
+
+
+def kruskal_wallis_modified(groups: list, alpha: float = 0.05) -> dict:
+    """Backward-compatible wrapper for the modified interval-based Kruskal-Wallis entry point."""
+    return kruskal_wallis_neutrosophic_interval(groups, alpha=alpha)
 
 
 # =============================================================================
@@ -970,7 +982,7 @@ def kruskal_wallis_neutrosophic(
 
 def run_simulation(
     n_simulations: int = 1000,
-    n_monte_carlo_reps: int = 10,
+    n_monte_carlo_reps: int = 5,
     n_list: list = None,
     deltas: list = None,
     effect_sizes: list = None,
@@ -984,13 +996,13 @@ def run_simulation(
     Run simulation study for corrected neutrosophic Kruskal-Wallis tests.
     """
     if n_list is None:
-        n_list = [20, 50]
+        n_list = [20, 100, 500, 1000, 10000]
     if deltas is None:
-        deltas = [0.0, 0.1, 0.25]
+        deltas = [0.0, 0.1, 0.25, 0.5, 0.75, 1.0]
     if effect_sizes is None:
-        effect_sizes = [0.0, 0.5]
+        effect_sizes = [0.0, 0.5, 0.75, 1.0]
     if component_correlations is None:
-        component_correlations = ['independent', 'moderate']
+        component_correlations = ['independent', 'moderate', 'strong']
     if methods is None:
         methods = ['robust', 'interval']
     

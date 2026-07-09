@@ -17,7 +17,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from app import load_css
+from app4 import load_css
 from data.loader import load_dataset
 from core.neutrosophic import neutrosophicate, NeutrosophicArray
 from core.tests.kruskal_wallis import kruskal_wallis_modified

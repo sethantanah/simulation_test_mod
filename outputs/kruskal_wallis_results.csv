@@ -1,0 +1,7 @@
+scenario,method,H_statistic,p_value,decision,n_simulations,n_monte_carlo_reps,n_list,deltas,effect_sizes,component_correlations,alpha
+crisp,classical,12.5,0.0019304541362277095,Reject H0,,,,,,,
+crisp,robust,12.5,0.0019304541362277095,Reject H0,,,,,,,
+crisp,interval,12.5,0.0019304541362277095,Reject H0 (all possible values show significance),,,,,,,
+uncertain,robust,12.5,0.0019304541362277095,Reject H0,,,,,,,
+uncertain,interval,12.5,0.0019304541362277095,Reject H0 (all possible values show significance),,,,,,,
+simulation_config,settings,,,configured,1000.0,5.0,"[20, 100, 500, 1000, 10000]","[0.0, 0.1, 0.25, 0.5, 0.75, 1.0]","[0.0, 0.5, 0.75, 1.0]","['independent', 'moderate', 'strong']",0.05

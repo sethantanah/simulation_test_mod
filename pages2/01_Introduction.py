@@ -20,7 +20,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from app import load_css
+from app4 import load_css
 
 st.set_page_config(
     page_title="Neutrosophic Non-Parametric Tests | PhD Research",

@@ -3,7 +3,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from app import load_css
+from app4 import load_css
 from reporting.pdf_export import generate_pdf_report
 
 st.set_page_config(page_title="Export Research Report", layout="wide")
