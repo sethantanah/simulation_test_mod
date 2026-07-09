@@ -1,3 +1,7 @@
+import json
+import os
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -992,6 +996,7 @@ def run_simulation(
     base_seed: int = 42,
     methods: list = None,
     progress_callback=None,
+    checkpoint_path=None,
 ) -> pd.DataFrame:
     """
     Run simulation study for corrected neutrosophic Kruskal-Wallis tests.
@@ -1008,6 +1013,16 @@ def run_simulation(
         methods = ['robust', 'interval']
     
     results = []
+    completed_conditions = 0
+    if checkpoint_path is not None:
+        path = Path(checkpoint_path)
+        if path.exists():
+            try:
+                checkpoint = json.loads(path.read_text(encoding="utf-8"))
+                results = checkpoint.get("results", [])
+                completed_conditions = int(checkpoint.get("completed_conditions", 0))
+            except Exception:
+                completed_conditions = 0
     
     total_conditions = (
         len(n_list) * len(deltas) * len(effect_sizes) * len(component_correlations)
@@ -1019,6 +1034,8 @@ def run_simulation(
             for es in effect_sizes:
                 for corr in component_correlations:
                     condition_count += 1
+                    if condition_count <= completed_conditions:
+                        continue
                     message = (
                         f"[{condition_count}/{total_conditions}] "
                         f"n={n}, δ={delta_val}, es={es}, corr={corr}"

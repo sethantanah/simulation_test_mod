@@ -1,3 +1,4 @@
+import json
 import os
 import queue
 import time
@@ -32,6 +33,31 @@ st.set_page_config(
 
 OUTPUT_DIR = Path(__file__).resolve().parent / "outputs"
 OUTPUT_DIR.mkdir(exist_ok=True)
+
+
+def _checkpoint_path(label):
+    return OUTPUT_DIR / f"{label}_simulation_progress.json"
+
+
+def _load_checkpoint(label):
+    path = _checkpoint_path(label)
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _save_checkpoint(label, payload):
+    path = _checkpoint_path(label)
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def _clear_checkpoint(label):
+    path = _checkpoint_path(label)
+    if path.exists():
+        path.unlink()
 
 
 def _emit_progress(progress_queue, label, value, message, kind="progress"):
@@ -97,12 +123,14 @@ def run_kruskal_wallis_analysis(
             base_seed=42,
             methods=["robust", "interval"],
             progress_callback=_forward_log,
+            checkpoint_path=_checkpoint_path("kruskal"),
         )
 
         _emit_progress(progress_queue, "kruskal", 0.9, "Formatting results")
 
         output_path = OUTPUT_DIR / "kruskal_wallis_results.csv"
         df.to_csv(output_path, index=False)
+        _clear_checkpoint("kruskal")
 
         _emit_progress(progress_queue, "kruskal", 1.0, f"Saved {output_path.name}")
         return {"df": df, "path": output_path}
@@ -156,12 +184,14 @@ def run_moods_median_analysis(
             alpha=alpha,
             base_seed=42,
             progress_callback=_forward_log,
+            checkpoint_path=_checkpoint_path("moods"),
         )
 
         _emit_progress(progress_queue, "moods", 0.9, "Formatting results")
 
         output_path = OUTPUT_DIR / "moods_median_correct_framework.csv"
         df.to_csv(output_path, index=False)
+        _clear_checkpoint("moods")
 
         _emit_progress(progress_queue, "moods", 1.0, f"Saved {output_path.name}")
         return {"df": df, "path": output_path}
@@ -275,10 +305,24 @@ with st.sidebar:
             step=0.001,
         )
 
+    st.sidebar.caption("Saved progress is resumed automatically if a previous run was interrupted.")
     run_button = st.button("Run both analyses in parallel", use_container_width=True)
+    restart_button = st.button("Restart from scratch", use_container_width=True)
+
+    kw_checkpoint = _load_checkpoint("kruskal")
+    moods_checkpoint = _load_checkpoint("moods")
+    if kw_checkpoint or moods_checkpoint:
+        st.info("Resume checkpoints are available for the current analysis settings.")
+
+    if restart_button:
+        _clear_checkpoint("kruskal")
+        _clear_checkpoint("moods")
+        st.session_state["running"] = True
+        st.session_state.pop("kruskal_result", None)
+        st.session_state.pop("moods_result", None)
 
 
-if run_button:
+if run_button or restart_button:
     st.session_state["running"] = True
 
 if st.session_state.get("running", False):
