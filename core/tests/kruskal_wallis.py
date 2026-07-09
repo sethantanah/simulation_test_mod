@@ -991,6 +991,7 @@ def run_simulation(
     alpha: float = 0.05,
     base_seed: int = 42,
     methods: list = None,
+    progress_callback=None,
 ) -> pd.DataFrame:
     """
     Run simulation study for corrected neutrosophic Kruskal-Wallis tests.
@@ -1018,10 +1019,14 @@ def run_simulation(
             for es in effect_sizes:
                 for corr in component_correlations:
                     condition_count += 1
-                    print(
-                        f"  [{condition_count}/{total_conditions}] "
+                    message = (
+                        f"[{condition_count}/{total_conditions}] "
                         f"n={n}, δ={delta_val}, es={es}, corr={corr}"
                     )
+                    print(f"  {message}")
+                    progress_value = condition_count / max(total_conditions, 1)
+                    if progress_callback is not None:
+                        progress_callback(message, progress_value)
                     
                     mc_results = {m: {'rejections': [], 'indeterminates': [], 'successes': []} 
                                  for m in methods}

@@ -13,11 +13,12 @@ from core.tests.kruskal_wallis import (
     build_neutrosophic_group,
     kruskal_wallis_neutrosophic_interval,
     kruskal_wallis_robust,
-    run_simulation,
+    run_simulation as kw_run_simulation,
 )
 from core.tests.moods_median import (
     moods_median_modified,
     moods_median_original,
+    run_simulation as moods_run_simulation,
     simulate_neutrosophic_data,
 )
 
@@ -33,9 +34,9 @@ OUTPUT_DIR = Path(__file__).resolve().parent / "outputs"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 
-def _emit_progress(progress_queue, label, value, message):
+def _emit_progress(progress_queue, label, value, message, kind="progress"):
     if progress_queue is not None:
-        progress_queue.put({"label": label, "value": value, "message": message})
+        progress_queue.put({"label": label, "value": value, "message": message, "kind": kind})
 
 
 def _parse_number_list(value, dtype=float, default=None):
@@ -60,7 +61,7 @@ def run_kruskal_wallis_analysis(
     correlations=None,
     alpha=0.05,
 ):
-    _emit_progress(progress_queue, "kruskal", 0.0, "Preparing Kruskal-Wallis inputs")
+    _emit_progress(progress_queue, "kruskal", 0.0, "Initializing Kruskal-Wallis simulation")
 
     if n_list is None:
         n_list = [20, 100, 500, 1000, 10000]
@@ -71,98 +72,43 @@ def run_kruskal_wallis_analysis(
     if correlations is None:
         correlations = ["independent", "moderate", "strong"]
 
-    np.random.seed(42)
-
-    np.random.seed(42)
-
-    g1 = [1, 2, 3, 4, 5]
-    g2 = [6, 7, 8, 9, 10]
-    g3 = [11, 12, 13, 14, 15]
-
-    crisp = [
-        build_neutrosophic_group(g1, falsity_mode="zero"),
-        build_neutrosophic_group(g2, falsity_mode="zero"),
-        build_neutrosophic_group(g3, falsity_mode="zero"),
-    ]
-
-    uncertain = [
-        build_neutrosophic_group(g1, 0.1, falsity_mode="complement"),
-        build_neutrosophic_group(g2, 0.2, falsity_mode="complement"),
-        build_neutrosophic_group(g3, 0.3, falsity_mode="complement"),
-    ]
-
     _emit_progress(
         progress_queue,
         "kruskal",
-        0.2,
-        f"Using config: {n_simulations} sims, {n_monte_carlo} MC reps, α={alpha}",
+        0.1,
+        f"Running {n_simulations} sims × {n_monte_carlo} MC reps",
     )
-    classical_H, classical_p = stats.kruskal(g1, g2, g3)
-    robust_crisp = kruskal_wallis_robust(crisp)
-    interval_crisp = kruskal_wallis_neutrosophic_interval(crisp)
 
-    _emit_progress(progress_queue, "kruskal", 0.6, "Running uncertain-data checks")
-    robust_uncertain = kruskal_wallis_robust(uncertain)
-    interval_uncertain = kruskal_wallis_neutrosophic_interval(uncertain)
+    def _forward_log(message, progress=None):
+        if progress is not None:
+            _emit_progress(progress_queue, "kruskal", float(progress), message, kind="progress")
+        else:
+            _emit_progress(progress_queue, "kruskal", 0.0, message, kind="log")
 
-    rows = [
-        {
-            "scenario": "crisp",
-            "method": "classical",
-            "H_statistic": float(classical_H),
-            "p_value": float(classical_p),
-            "decision": "Reject H0" if classical_p < 0.05 else "Fail to Reject H0",
-        },
-        {
-            "scenario": "crisp",
-            "method": "robust",
-            "H_statistic": float(robust_crisp.get("H_statistic", np.nan)),
-            "p_value": float(robust_crisp.get("p_value", np.nan)),
-            "decision": robust_crisp.get("decision", ""),
-        },
-        {
-            "scenario": "crisp",
-            "method": "interval",
-            "H_statistic": float(interval_crisp.get("H_classical", np.nan)),
-            "p_value": float(interval_crisp.get("p_value", np.nan)),
-            "decision": interval_crisp.get("decision", ""),
-        },
-        {
-            "scenario": "uncertain",
-            "method": "robust",
-            "H_statistic": float(robust_uncertain.get("H_statistic", np.nan)),
-            "p_value": float(robust_uncertain.get("p_value", np.nan)),
-            "decision": robust_uncertain.get("decision", ""),
-        },
-        {
-            "scenario": "uncertain",
-            "method": "interval",
-            "H_statistic": float(interval_uncertain.get("H_classical", np.nan)),
-            "p_value": float(interval_uncertain.get("p_value", np.nan)),
-            "decision": interval_uncertain.get("decision", ""),
-        },
-        {
-            "scenario": "simulation_config",
-            "method": "settings",
-            "H_statistic": np.nan,
-            "p_value": np.nan,
-            "decision": "configured",
-            "n_simulations": n_simulations,
-            "n_monte_carlo_reps": n_monte_carlo,
-            "n_list": str(n_list),
-            "deltas": str(deltas),
-            "effect_sizes": str(effect_sizes),
-            "component_correlations": str(correlations),
-            "alpha": alpha,
-        },
-    ]
+    try:
+        df = kw_run_simulation(
+            n_simulations=n_simulations,
+            n_monte_carlo_reps=n_monte_carlo,
+            n_list=n_list,
+            deltas=deltas,
+            effect_sizes=effect_sizes,
+            component_correlations=correlations,
+            alpha=alpha,
+            base_seed=42,
+            methods=["robust", "interval"],
+            progress_callback=_forward_log,
+        )
 
-    df = pd.DataFrame(rows)
-    output_path = OUTPUT_DIR / "kruskal_wallis_results.csv"
-    df.to_csv(output_path, index=False)
+        _emit_progress(progress_queue, "kruskal", 0.9, "Formatting results")
 
-    _emit_progress(progress_queue, "kruskal", 1.0, f"Saved {output_path.name}")
-    return {"df": df, "path": output_path}
+        output_path = OUTPUT_DIR / "kruskal_wallis_results.csv"
+        df.to_csv(output_path, index=False)
+
+        _emit_progress(progress_queue, "kruskal", 1.0, f"Saved {output_path.name}")
+        return {"df": df, "path": output_path}
+    except Exception as e:
+        _emit_progress(progress_queue, "kruskal", 1.0, f"Error: {str(e)}")
+        return {"df": pd.DataFrame(), "path": None}
 
 
 def run_moods_median_analysis(
@@ -175,7 +121,7 @@ def run_moods_median_analysis(
     correlations=None,
     alpha=0.05,
 ):
-    _emit_progress(progress_queue, "moods", 0.0, "Initializing Mood's Median simulation config")
+    _emit_progress(progress_queue, "moods", 0.0, "Initializing Mood's Median simulation")
 
     if n_list is None:
         n_list = [20, 100, 500, 1000, 10000]
@@ -186,91 +132,42 @@ def run_moods_median_analysis(
     if correlations is None:
         correlations = ["independent", "moderate", "strong"]
 
-    results = []
-    total_conditions = len(n_list) * len(deltas) * len(effect_sizes) * len(correlations)
-    total_steps = total_conditions * n_monte_carlo
-    completed_steps = 0
+    _emit_progress(
+        progress_queue,
+        "moods",
+        0.1,
+        f"Running {n_simulations} sims × {n_monte_carlo} MC reps",
+    )
 
-    for n in n_list:
-        for delta_val in deltas:
-            for es in effect_sizes:
-                for corr in correlations:
-                    mc_orig = {"rejections": [], "indeterminates": [], "successes": []}
-                    mc_mod = {"rejections": [], "indeterminates": [], "successes": []}
+    def _forward_log(message, progress=None):
+        if progress is not None:
+            _emit_progress(progress_queue, "moods", float(progress), message, kind="progress")
+        else:
+            _emit_progress(progress_queue, "moods", 0.0, message, kind="log")
 
-                    for mc_rep in range(n_monte_carlo):
-                        rep_seed = 42 + mc_rep * 10000 + completed_steps * 100
+    try:
+        df = moods_run_simulation(
+            n_simulations=n_simulations,
+            n_monte_carlo_reps=n_monte_carlo,
+            n_list=n_list,
+            deltas=deltas,
+            effect_sizes=effect_sizes,
+            component_correlations=correlations,
+            alpha=alpha,
+            base_seed=42,
+            progress_callback=_forward_log,
+        )
 
-                        for sim in range(n_simulations):
-                            sim_seed = rep_seed + sim
-                            groups = simulate_neutrosophic_data(
-                                n_groups=3,
-                                n_per_group=n,
-                                effect_size=es,
-                                indeterminacy_level=delta_val,
-                                distribution="normal",
-                                component_correlation=corr,
-                                seed=sim_seed,
-                            )
+        _emit_progress(progress_queue, "moods", 0.9, "Formatting results")
 
-                            orig = moods_median_original(groups, alpha=alpha)
-                            mod = moods_median_modified(groups, alpha=alpha, n_permutations=1000, permutation_seed=sim_seed)
+        output_path = OUTPUT_DIR / "moods_median_correct_framework.csv"
+        df.to_csv(output_path, index=False)
 
-                            if orig is not None:
-                                mc_orig["rejections"].append(float(orig["p_value"] < alpha))
-                                mc_orig["indeterminates"].append(float(orig.get("is_indeterminate", False)))
-                                mc_orig["successes"].append(1)
-
-                            if mod is not None:
-                                p_value = mod.get("p_3xk", mod.get("p_lo", mod.get("p_hi", np.nan)))
-                                mc_mod["rejections"].append(float(p_value < alpha) if np.isfinite(p_value) else float(mod.get("reject_H0", False)))
-                                mc_mod["indeterminates"].append(float(mod.get("is_indeterminate", False)))
-                                mc_mod["successes"].append(1)
-
-                        completed_steps += 1
-                        progress_value = completed_steps / max(total_steps, 1)
-                        _emit_progress(
-                            progress_queue,
-                            "moods",
-                            progress_value,
-                            f"Running {n}-sample condition {completed_steps}/{total_steps}",
-                        )
-
-                    results.append(
-                        {
-                            "variant": "original",
-                            "component_correlation": corr,
-                            "delta": delta_val,
-                            "n": n,
-                            "effect_size": es,
-                            "rejection_rate_mean": float(np.mean(mc_orig["rejections"])) if mc_orig["rejections"] else np.nan,
-                            "rejection_rate_std": float(np.std(mc_orig["rejections"])) if mc_orig["rejections"] else np.nan,
-                            "indeterminate_rate_mean": float(np.mean(mc_orig["indeterminates"])) if mc_orig["indeterminates"] else np.nan,
-                            "indeterminate_rate_std": float(np.std(mc_orig["indeterminates"])) if mc_orig["indeterminates"] else np.nan,
-                            "avg_successful_sims": float(np.mean(mc_orig["successes"])) if mc_orig["successes"] else np.nan,
-                        }
-                    )
-                    results.append(
-                        {
-                            "variant": "modified",
-                            "component_correlation": corr,
-                            "delta": delta_val,
-                            "n": n,
-                            "effect_size": es,
-                            "rejection_rate_mean": float(np.mean(mc_mod["rejections"])) if mc_mod["rejections"] else np.nan,
-                            "rejection_rate_std": float(np.std(mc_mod["rejections"])) if mc_mod["rejections"] else np.nan,
-                            "indeterminate_rate_mean": float(np.mean(mc_mod["indeterminates"])) if mc_mod["indeterminates"] else np.nan,
-                            "indeterminate_rate_std": float(np.std(mc_mod["indeterminates"])) if mc_mod["indeterminates"] else np.nan,
-                            "avg_successful_sims": float(np.mean(mc_mod["successes"])) if mc_mod["successes"] else np.nan,
-                        }
-                    )
-
-    df = pd.DataFrame(results)
-    output_path = OUTPUT_DIR / "moods_median_correct_framework.csv"
-    df.to_csv(output_path, index=False)
-
-    _emit_progress(progress_queue, "moods", 1.0, f"Saved {output_path.name}")
-    return {"df": df, "path": output_path}
+        _emit_progress(progress_queue, "moods", 1.0, f"Saved {output_path.name}")
+        return {"df": df, "path": output_path}
+    except Exception as e:
+        _emit_progress(progress_queue, "moods", 1.0, f"Error: {str(e)}")
+        return {"df": pd.DataFrame(), "path": None}
 
 
 st.title("Parallel neutrosophic statistical analysis")
@@ -388,6 +285,7 @@ if st.session_state.get("running", False):
     progress_queue = queue.Queue()
     progress_state = {"kruskal": 0.0, "moods": 0.0}
     progress_messages = {"kruskal": "Waiting to start", "moods": "Waiting to start"}
+    log_lines = {"kruskal": [], "moods": []}
 
     with st.container():
         col1, col2 = st.columns(2)
@@ -395,10 +293,12 @@ if st.session_state.get("running", False):
             st.subheader("Kruskal-Wallis")
             status_k = st.empty()
             bar_k = st.progress(0.0)
+            log_box_k = st.empty()
         with col2:
             st.subheader("Mood's Median")
             status_m = st.empty()
             bar_m = st.progress(0.0)
+            log_box_m = st.empty()
 
         kw_n_list = _parse_number_list(
             st.session_state.kw_settings["n_list"], dtype=int,
@@ -460,27 +360,41 @@ if st.session_state.get("running", False):
                 while not progress_queue.empty():
                     update = progress_queue.get_nowait()
                     label = update["label"]
-                    progress_state[label] = float(update["value"])
-                    progress_messages[label] = update["message"]
+                    if update.get("kind") == "log":
+                        log_lines[label].append(update["message"])
+                        if len(log_lines[label]) > 80:
+                            log_lines[label] = log_lines[label][-80:]
+                    else:
+                        progress_state[label] = float(update["value"])
+                        progress_messages[label] = update["message"]
 
                 if progress_state["kruskal"] >= 0.0:
                     bar_k.progress(progress_state["kruskal"])
                     status_k.write(f"{progress_messages['kruskal']} ({progress_state['kruskal'] * 100:.0f}%)")
+                    log_box_k.code("\n".join(log_lines["kruskal"][-20:]) if log_lines["kruskal"] else "No logs yet")
                 if progress_state["moods"] >= 0.0:
                     bar_m.progress(progress_state["moods"])
                     status_m.write(f"{progress_messages['moods']} ({progress_state['moods'] * 100:.0f}%)")
+                    log_box_m.code("\n".join(log_lines["moods"][-20:]) if log_lines["moods"] else "No logs yet")
                 time.sleep(0.2)
 
         while not progress_queue.empty():
             update = progress_queue.get_nowait()
             label = update["label"]
-            progress_state[label] = float(update["value"])
-            progress_messages[label] = update["message"]
+            if update.get("kind") == "log":
+                log_lines[label].append(update["message"])
+                if len(log_lines[label]) > 80:
+                    log_lines[label] = log_lines[label][-80:]
+            else:
+                progress_state[label] = float(update["value"])
+                progress_messages[label] = update["message"]
 
         bar_k.progress(progress_state["kruskal"])
         status_k.write(f"{progress_messages['kruskal']} ({progress_state['kruskal'] * 100:.0f}%)")
+        log_box_k.code("\n".join(log_lines["kruskal"][-20:]) if log_lines["kruskal"] else "No logs yet")
         bar_m.progress(progress_state["moods"])
         status_m.write(f"{progress_messages['moods']} ({progress_state['moods'] * 100:.0f}%)")
+        log_box_m.code("\n".join(log_lines["moods"][-20:]) if log_lines["moods"] else "No logs yet")
 
     kruskal_result = future_kw.result()
     moods_result = future_mm.result()

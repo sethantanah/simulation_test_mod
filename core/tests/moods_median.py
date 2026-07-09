@@ -415,7 +415,8 @@ def run_simulation(
     component_correlations: list = ['independent', 'moderate', 'strong'],
     alpha: float = 0.05,
     n_permutations: int = 500,
-    base_seed: int = 42
+    base_seed: int = 42,
+    progress_callback=None,
 ) -> pd.DataFrame:
     """Run simulation comparing original vs modified neutrosophic Mood's test."""
     results = []
@@ -429,8 +430,14 @@ def run_simulation(
             for es in effect_sizes:
                 for corr in component_correlations:
                     condition_count += 1
-                    print(f"  [{condition_count}/{total_conditions}] "
-                          f"n={n}, δ={delta_val}, es={es}, corr={corr}")
+                    message = (
+                        f"[{condition_count}/{total_conditions}] "
+                        f"n={n}, δ={delta_val}, es={es}, corr={corr}"
+                    )
+                    print(f"  {message}")
+                    progress_value = condition_count / max(total_conditions, 1)
+                    if progress_callback is not None:
+                        progress_callback(message, progress_value)
                     
                     mc_orig = {'rejections': [], 'indeterminates': [], 'successes': []}
                     mc_mod = {'rejections': [], 'indeterminates': [], 'successes': []}
